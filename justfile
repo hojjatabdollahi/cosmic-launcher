@@ -66,8 +66,7 @@ uninstall:
 # Vendor dependencies locally
 vendor:
     cp .cargo/config.default .cargo/config.toml
-    cargo vendor --sync Cargo.toml \
-        | head -n -1 >> .cargo/config.toml
+    cargo vendor --locked | head -n -1 > .cargo/config.toml
     echo 'directory = "vendor"' >> .cargo/config.toml
     rm -rf vendor/winapi*gnu*/lib/*.a; \
     tar pcf vendor.tar vendor
