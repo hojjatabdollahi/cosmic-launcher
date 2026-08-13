@@ -13,21 +13,7 @@ cargo-target-dir := env('CARGO_TARGET_DIR', 'target')
 bin-src := if debug == '1' { 'debug' / NAME } else { cargo-target-dir / 'release' / NAME }
 bin-dst := base-dir / 'bin' / NAME
 
-# Use mold linker if clang and mold exists.
-clang-path := `which clang || true`
-mold-path := `which mold || true`
-
-ld-args := if clang-path != '' {
-    if mold-path != '' {
-        '-C linker=' + clang-path + ' -C link-arg=--ld-path=' + mold-path + ' '
-    } else {
-        ''
-    }
-} else {
-    ''
-}
-
-export RUSTFLAGS := env_var_or_default('RUSTFLAGS', '') + ' --cfg tokio_unstable ' + ld-args
+export RUSTFLAGS := env_var_or_default('RUSTFLAGS', '') + ' --cfg tokio_unstable '
 
 # Default recipe which runs `just build-release`
 default: build-release
