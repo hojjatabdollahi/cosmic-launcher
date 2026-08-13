@@ -1,17 +1,19 @@
-export NAME := 'cosmic-launcher'
-export APPID := 'com.system76.CosmicLauncher'
+name := 'cosmic-launcher'
+appid := 'com.system76.CosmicLauncher'
 
 rootdir := ''
 prefix := '/usr'
 debug := '0'
 
+appdata := appid + '.metainfo.xml'
+desktop := appid + '.desktop'
+
 base-dir := absolute_path(clean(rootdir / prefix))
-
-export INSTALL_DIR := base-dir / 'share'
-
 cargo-target-dir := env('CARGO_TARGET_DIR', 'target')
-bin-src := if debug == '1' { 'debug' / NAME } else { cargo-target-dir / 'release' / NAME }
-bin-dst := base-dir / 'bin' / NAME
+bin-src := if debug == '1' { 'debug' / name } else { cargo-target-dir / 'release' / name }
+bin-dst := base-dir / 'bin' / name
+appdata-dst := base-dir / 'share' / 'appdata' / appdata
+desktop-dst := base-dir / 'share' / 'applications' / desktop
 
 export RUSTFLAGS := env_var_or_default('RUSTFLAGS', '') + ' --cfg tokio_unstable '
 
@@ -54,7 +56,8 @@ tokio-console: (build-release '--features console')
 # Installs files
 install:
     install -Dm0755 {{bin-src}} {{bin-dst}}
-    @just data/install
+    install -Dm0644 {{ 'target' / 'xdgen' / desktop }} {{desktop-dst}}
+    install -Dm0644 {{ 'target' / 'xdgen' / appdata }} {{appdata-dst}}
     @just data/icons/install
 
 # Uninstalls installed files
