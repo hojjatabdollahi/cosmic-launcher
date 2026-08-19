@@ -16,7 +16,7 @@ bin-src := if debug == '1' { 'debug' / name } else { cargo-target-dir / 'release
 bin-dst := base-dir / 'bin' / name
 appdata-dst := base-dir / 'share' / 'appdata' / appdata
 desktop-dst := base-dir / 'share' / 'applications' / desktop
-icon-dst := base-dir / 'icons' / 'hicolor' / 'scalable' / 'apps' / appid + '.svg'
+icon-dst := base-dir / 'share' / 'icons' / 'hicolor' / 'scalable' / 'apps' / appid + '.svg'
 
 export RUSTFLAGS := env_var_or_default('RUSTFLAGS', '') + ' --cfg tokio_unstable '
 
