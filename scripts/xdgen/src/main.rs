@@ -4,7 +4,7 @@ use xdgen::{App, Context, FluentString};
 
 fn main() {
     let ctx = Context::new("i18n", env::var("APP_NAME").unwrap()).unwrap();
-    let app = App::new(FluentString("xdg-title"))
+    let app = App::new(FluentString("xdg-name"))
         .comment(FluentString("xdg-comment"))
         .keywords(FluentString("xdg-keywords"));
 
