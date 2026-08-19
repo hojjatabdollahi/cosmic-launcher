@@ -1,3 +1,5 @@
+mod cargo 'cargo.just'
+
 name := 'cosmic-launcher'
 appid := 'com.system76.CosmicLauncher'
 
@@ -14,40 +16,48 @@ bin-src := if debug == '1' { 'debug' / name } else { cargo-target-dir / 'release
 bin-dst := base-dir / 'bin' / name
 appdata-dst := base-dir / 'share' / 'appdata' / appdata
 desktop-dst := base-dir / 'share' / 'applications' / desktop
+icon-dst := base-dir / 'icons' / 'hicolor' / 'scalable' / 'apps' / appid + '.svg'
 
 export RUSTFLAGS := env_var_or_default('RUSTFLAGS', '') + ' --cfg tokio_unstable '
 
 # Default recipe which runs `just build-release`
-default: build-release
+default: xdgen build-release
 
 # Runs `cargo clean`
-clean:
-    cargo clean
+clean: cargo::clean
 
 # `cargo clean` and removes vendored dependencies
-clean-dist: clean
-    rm -rf vendor vendor.tar
+clean-dist: cargo::clean-dist
+    mkdir -p .cargo
+    cp data/cargo/config.toml .cargo/config.toml
 
 # Compiles with debug profile
-build-debug *args:
-    cargo build {{args}}
+build-debug *args: (cargo::build-debug args)
 
 # Compiles with release profile
-build-release *args: (build-debug '--release' args)
+build-release *args: (cargo::build-release args)
 
 # Compiles release profile with vendored dependencies
-build-vendored *args: vendor-extract (build-release '--frozen --offline' args)
+build-vendored *args: (cargo::build-vendored args)
+
+# Compiles and runs a standalone instance
+run *args: (cargo::run args)
 
 # Runs a clippy check
-check *args:
-    cargo clippy --all-features {{args}} -- -W clippy::pedantic
+check *args: (cargo::check args)
 
 # Runs a clippy check with JSON message format
 check-json: (check '--message-format=json')
 
-# Runs after compiling a release build
-run: build-release
-    {{bin-src}}
+# Vendor dependencies locally
+vendor: xdgen cargo::vendor
+
+# Extracts vendored dependencies
+vendor-extract: cargo::vendor-extract
+
+# Generate desktop entries and appstream metadata with translations
+xdgen:
+    env APP_ID={{appid}} APP_NAME={{name}} cargo run --manifest-path scripts/xdgen/Cargo.toml
 
 # Build and run with tokio-console enabled
 tokio-console: (build-release '--features console')
@@ -58,25 +68,8 @@ install:
     install -Dm0755 {{bin-src}} {{bin-dst}}
     install -Dm0644 {{ 'target' / 'xdgen' / desktop }} {{desktop-dst}}
     install -Dm0644 {{ 'target' / 'xdgen' / appdata }} {{appdata-dst}}
-    @just data/icons/install
+    install -Dm0644 {{ 'data' / 'icons' / appid + '.svg' }} {{icon-dst}}
 
 # Uninstalls installed files
 uninstall:
-    rm {{bin-dst}}
-    @just data/uninstall
-    @just data/icons/uninstall
-
-# Vendor dependencies locally
-vendor:
-    cp .cargo/config.default .cargo/config.toml
-    cargo vendor --locked | head -n -1 > .cargo/config.toml
-    echo 'directory = "vendor"' >> .cargo/config.toml
-    rm -rf vendor/winapi*gnu*/lib/*.a; \
-    tar pcf vendor.tar vendor
-    rm -rf vendor
-
-# Extracts vendored dependencies
-vendor-extract:
-    #!/usr/bin/env sh
-    rm -rf vendor
-    tar pxf vendor.tar
+    rm {{bin-dst}} {{desktop-dst}} {{appdata-dst}} {{icon-dst}}
